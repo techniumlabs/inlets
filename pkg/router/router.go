@@ -1,9 +1,10 @@
-// Copyright (c) Inlets Author(s) 2019. All rights reserved.
+// Copyright (c) Inlets Author(s) 2021. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 package router
 
 import (
+	"context"
 	"crypto/tls"
 	"net"
 	"net/http"
@@ -94,8 +95,8 @@ func (r *Router) getTransport(id, host string) (string, *http.Transport) {
 	transport := &http.Transport{
 		TLSHandshakeTimeout:   10 * time.Second,
 		ExpectContinueTimeout: 1 * time.Second,
-		Dial: func(network, address string) (net.Conn, error) {
-			return r.Server.Dial(id, time.Minute, network, targetHost)
+		DialContext: func(ctx context.Context, network, address string) (net.Conn, error) {
+			return r.Server.Dialer(id)(ctx, network, targetHost)
 		},
 		TLSClientConfig: &tls.Config{
 			// TLS cert will basically never line up right

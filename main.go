@@ -1,9 +1,12 @@
-// Copyright (c) Inlets Author(s) 2019. All rights reserved.
+// Copyright (c) Inlets Author(s) 2021. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 package main
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/inlets/inlets/cmd"
 	"github.com/sirupsen/logrus"
 )
@@ -21,6 +24,7 @@ func main() {
 	customFormatter.FullTimestamp = true
 
 	if err := cmd.Execute(Version, GitCommit); err != nil {
-		panic(err)
+		fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
+		os.Exit(1)
 	}
 }

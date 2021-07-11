@@ -1,4 +1,4 @@
-// Copyright (c) Inlets Author(s) 2019. All rights reserved.
+// Copyright (c) Inlets Author(s) 2021. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 package client
@@ -89,7 +89,6 @@ func (c *Client) Connect() error {
 		filter = makeAllowsAllFilter()
 	}
 
-	for {
-		remotedialer.ClientConnect(context.Background(), url+"/tunnel", headers, nil, filter, nil)
-	}
+	remotedialer.ClientConnect(context.Background(), url+"/tunnel", headers, nil, filter, nil)
+	return nil
 }

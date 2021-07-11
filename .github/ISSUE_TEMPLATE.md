@@ -12,6 +12,12 @@
 <!--- Not obligatory, but suggest a fix/reason for the bug, -->
 <!--- or ideas how to implement the addition or change -->
 
+## Are you a GitHub Sponsor (Yes/No?)
+
+Check at: https://github.com/sponsors/inlets
+- [ ] Yes
+- [ ] No
+
 ## Steps to Reproduce (for bugs)
 <!--- Provide a link to a live example, or an unambiguous set of steps to -->
 <!--- reproduce this bug. Include code to reproduce, if relevant -->
@@ -23,7 +29,6 @@
 ## Context
 <!--- How has this issue affected you? What are you trying to accomplish? -->
 <!--- Providing context helps us come up with a solution that is most useful in the real world -->
-
 
 ## Your Environment
 <!--- Include as many relevant details about the environment you experienced the bug in -->

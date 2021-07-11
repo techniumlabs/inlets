@@ -1,4 +1,4 @@
-// Copyright (c) Inlets Author(s) 2019. All rights reserved.
+// Copyright (c) Inlets Author(s) 2021. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 package server
@@ -7,10 +7,8 @@ import (
 	"crypto/subtle"
 	"fmt"
 	"log"
-	"net"
 	"net/http"
 	"sync"
-	"time"
 
 	"github.com/inlets/inlets/pkg/router"
 	"github.com/inlets/inlets/pkg/transport"
@@ -28,7 +26,8 @@ type Server struct {
 	// ControlPort represents the tunnel to the inlets client
 	ControlPort int
 
-	BindAddr string
+	DataAddr    string
+	ControlAddr string
 
 	// Token is used to authenticate a client
 	Token string
@@ -42,17 +41,16 @@ type Server struct {
 
 // Serve traffic
 func (s *Server) Serve() {
-	if s.ControlPort == s.Port {
+	if s.Port == s.ControlPort {
 		s.server = remotedialer.New(s.authorized, remotedialer.DefaultErrorWriter)
 		s.router.Server = s.server
 
 		http.HandleFunc("/", s.proxy)
 		http.HandleFunc("/tunnel", s.tunnel)
 
-		log.Printf("Control Plane Listening on %s:%d\n", s.BindAddr, s.ControlPort)
-		log.Printf("Data Plane Listening on %s:%d\n", s.BindAddr, s.Port)
+		log.Printf("Control and data ports listening on %s:%d\n", s.ControlAddr, s.ControlPort)
 
-		if err := http.ListenAndServe(fmt.Sprintf("%s:%d", s.BindAddr, s.Port), nil); err != nil {
+		if err := http.ListenAndServe(fmt.Sprintf("%s:%d", s.ControlAddr, s.ControlPort), nil); err != nil {
 			log.Fatal(err)
 		}
 	} else {
@@ -69,11 +67,10 @@ func (s *Server) Serve() {
 
 			controlServer.HandleFunc("/tunnel", s.tunnel)
 
-			log.Printf("Control Plane Listening on %s:%d\n", s.BindAddr, s.ControlPort)
-			if err := http.ListenAndServe(fmt.Sprintf("%s:%d", s.BindAddr, s.ControlPort), controlServer); err != nil {
+			log.Printf("Control port listening on %s:%d\n", s.ControlAddr, s.ControlPort)
+			if err := http.ListenAndServe(fmt.Sprintf("%s:%d", s.ControlAddr, s.ControlPort), controlServer); err != nil {
 				log.Fatal(err)
 			}
-
 		}()
 
 		wg.Add(1)
@@ -84,9 +81,9 @@ func (s *Server) Serve() {
 			controlServer.HandleFunc("/", s.proxy)
 
 			http.HandleFunc("/", s.proxy)
-			log.Printf("Data Plane Listening on %s:%d\n", s.BindAddr, s.Port)
+			log.Printf("Data port listening on %s:%d\n", s.DataAddr, s.Port)
 
-			if err := http.ListenAndServe(fmt.Sprintf("%s:%d", s.BindAddr, s.Port), controlServer); err != nil {
+			if err := http.ListenAndServe(fmt.Sprintf("%s:%d", s.DataAddr, s.Port), controlServer); err != nil {
 				log.Fatal(err)
 			}
 		}()
@@ -108,7 +105,7 @@ func (s *Server) proxy(w http.ResponseWriter, r *http.Request) {
 	}
 
 	inletsID := uuid.Formatter(uuid.NewV4(), uuid.FormatHex)
-	log.Printf("[%s] proxy %s %s %s", inletsID, r.Host, r.Method, r.URL.String())
+	log.Printf("Proxy: %s %s => %s", r.Host, r.Method, r.URL.String())
 	r.Header.Set(transport.InletsHeader, inletsID)
 
 	u := *r.URL
@@ -121,12 +118,6 @@ func (s *Server) proxy(w http.ResponseWriter, r *http.Request) {
 
 func (s Server) Error(w http.ResponseWriter, req *http.Request, err error) {
 	remotedialer.DefaultErrorWriter(w, req, http.StatusInternalServerError, err)
-}
-
-func (s *Server) dialerFor(id, host string) remotedialer.Dialer {
-	return func(network, address string) (net.Conn, error) {
-		return s.server.Dial(id, time.Minute, network, host)
-	}
 }
 
 func (s *Server) tokenValid(req *http.Request) bool {
